@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, ArrowLeft, ChevronDown, ChevronUp, CheckCircle, Edit2 } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, CheckCircle, Edit2 } from 'lucide-react';
 import { toast } from "sonner";
 
 // ─── Blank endpoint template ──────────────────────────────────────────────────
@@ -171,7 +171,6 @@ const EndpointCard = ({ endpoint, index, onSave, onRemove, onEdit }) => {
           </button>
         </div>
 
-   
         {/* Body */}
         {needsBody && (
           <div>
@@ -236,8 +235,8 @@ const EndpointCard = ({ endpoint, index, onSave, onRemove, onEdit }) => {
   );
 };
 
-// ─── Main AddMonitor Component ────────────────────────────────────────────────
-const AddEndpoint= () => {
+// ─── Main AddEndpoint Component ───────────────────────────────────────────────
+const AddEndpoint = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -246,9 +245,8 @@ const AddEndpoint= () => {
   // 1. Monitor Info
   const [name, setName] = useState('');
 
-  // 2. Authentication
+  // 2. Authentication — simplified to 3 options
   const [authType, setAuthType] = useState('none');
-  const [bearerToken, setBearerToken] = useState('');
   const [apiKeyHeader, setApiKeyHeader] = useState('');
   const [apiKeyValue, setApiKeyValue] = useState('');
   const [loginEndpoint, setLoginEndpoint] = useState('');
@@ -256,7 +254,6 @@ const AddEndpoint= () => {
   const [testPassword, setTestPassword] = useState('');
 
   // 3. Monitoring Settings
-  const [checkInterval, setCheckInterval] = useState('30');
   const [timeout, setTimeout] = useState('5');
   const [retryCount, setRetryCount] = useState('2');
 
@@ -281,7 +278,6 @@ const AddEndpoint= () => {
   };
 
   const addEndpoint = () => {
-    // Only allow adding if current last endpoint is saved
     const unsaved = endpoints.filter((ep) => !ep.saved);
     if (unsaved.length > 0) {
       toast.error('Please save the current endpoint before adding another');
@@ -304,15 +300,21 @@ const AddEndpoint= () => {
     setError('');
     setLoading(true);
     try {
+      // Build auth config based on simplified 3-option model
       let authConfig = { type: authType };
-      if (authType === 'bearer') authConfig.token = bearerToken;
-      else if (authType === 'apikey') { authConfig.header = apiKeyHeader; authConfig.value = apiKeyValue; }
-      else if (authType === 'cookie') { authConfig.loginEndpoint = loginEndpoint; authConfig.email = testEmail; authConfig.password = testPassword; }
+      if (authType === 'apikey') {
+        authConfig.header = apiKeyHeader;
+        authConfig.value = apiKeyValue;
+      } else if (authType === 'login') {
+        authConfig.loginEndpoint = loginEndpoint;
+        authConfig.email = testEmail;
+        authConfig.password = testPassword;
+      }
 
       const monitorData = {
         name,
         auth: authConfig,
-        monitoring: { checkInterval: parseInt(checkInterval), timeout: parseInt(timeout), retryCount: parseInt(retryCount) },
+        monitoring: { timeout: parseInt(timeout), retryCount: parseInt(retryCount) },
         endpoints: endpoints.map((ep) => ({
           name: ep.name,
           url: ep.url,
@@ -326,14 +328,15 @@ const AddEndpoint= () => {
           },
         })),
       };
-   const response=   await fetch(`${import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:4003'}/api/add-endpoints`, {
+
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:4003'}/api/add-endpoints`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(monitorData),
       });
       const data = await response.json();
-       console.log('Response data:', data);
+      console.log('Response data:', data);
       toast.success('Monitor created successfully!');
       navigate('/');
     } catch (err) {
@@ -348,7 +351,7 @@ const AddEndpoint= () => {
   // REVIEW SCREEN
   // ─────────────────────────────────────────────────────────────────────────────
   if (step === 'review') {
-    const authLabels = { none: 'None', bearer: 'Bearer Token', apikey: 'API Key', cookie: 'Cookie Login' };
+    const authLabels = { none: 'None', apikey: 'API Key', login: 'Login Required' };
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8 px-4">
         <div className="max-w-4xl mx-auto">
@@ -372,7 +375,6 @@ const AddEndpoint= () => {
               <p className="text-lg font-semibold text-gray-800">{name}</p>
               <p className="text-sm font-mono text-gray-500 mt-1">
                 Auth: {authLabels[authType]} &nbsp;·&nbsp;
-                Interval: {checkInterval}s &nbsp;·&nbsp;
                 Timeout: {timeout}s &nbsp;·&nbsp;
                 Retries: {retryCount}
               </p>
@@ -382,7 +384,7 @@ const AddEndpoint= () => {
             <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-8">
               <h2 className="text-xl font-bold text-gray-900 mb-4">{endpoints.length} Endpoint{endpoints.length !== 1 ? 's' : ''}</h2>
               <div className="space-y-3">
-                {endpoints.map((ep, i) => (
+                {endpoints.map((ep) => (
                   <div key={ep.id} className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-200">
                     <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
                     <div>
@@ -459,81 +461,130 @@ const AddEndpoint= () => {
             </div>
           </div>
 
-          {/* 2. Authentication */}
+          {/* 2. Authentication — simplified 3-option radio UI */}
           <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
               <span className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-mono">2</span>
-              Authentication (Common for this Monitor)
+              Authentication
             </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-mono font-medium text-gray-700 mb-3">Authentication Type *</label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { value: 'none', label: 'None' },
-                    { value: 'bearer', label: 'Bearer Token' },
-                    { value: 'cookie', label: 'Cookie Login' },
-                    { value: 'apikey', label: 'API Key' },
-                  ].map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => setAuthType(type.value)}
-                      className={`px-4 py-3 rounded-2xl font-mono text-sm font-medium transition ${
-                        authType === type.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              {authType === 'bearer' && (
-                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200">
-                  <label className="block text-sm font-mono font-medium text-gray-700 mb-2">Bearer Token *</label>
-                  <input
-                    type="text" value={bearerToken} onChange={(e) => setBearerToken(e.target.value)} required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm"
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                  />
-                </div>
-              )}
+            <div className="space-y-3">
 
-              {authType === 'apikey' && (
-                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200 space-y-4">
-                  <div>
-                    <label className="block text-sm font-mono font-medium text-gray-700 mb-2">Header Name *</label>
-                    <input type="text" value={apiKeyHeader} onChange={(e) => setApiKeyHeader(e.target.value)} required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm" placeholder="X-API-Key" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-mono font-medium text-gray-700 mb-2">Header Value *</label>
-                    <input type="text" value={apiKeyValue} onChange={(e) => setApiKeyValue(e.target.value)} required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm" placeholder="sk_live_abc123xyz..." />
-                  </div>
+              {/* None */}
+              <label className="flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition
+                hover:bg-gray-50
+                has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                <input
+                  type="radio"
+                  name="authType"
+                  value="none"
+                  checked={authType === 'none'}
+                  onChange={() => setAuthType('none')}
+                  className="w-4 h-4 accent-blue-600"
+                />
+                <div>
+                  <p className="font-mono font-semibold text-gray-800 text-sm">None</p>
+                  <p className="text-xs text-gray-400 font-mono">No authentication required</p>
                 </div>
-              )}
+              </label>
 
-              {authType === 'cookie' && (
-                <div className="bg-blue-50 p-6 rounded-2xl border border-blue-200 space-y-4">
-                  <div>
-                    <label className="block text-sm font-mono font-medium text-gray-700 mb-2">Login Endpoint *</label>
-                    <input type="url" value={loginEndpoint} onChange={(e) => setLoginEndpoint(e.target.value)} required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm" placeholder="https://api.example.com/auth/login" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-mono font-medium text-gray-700 mb-2">Test Email *</label>
-                    <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm" placeholder="test@example.com" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-mono font-medium text-gray-700 mb-2">Test Password *</label>
-                    <input type="password" value={testPassword} onChange={(e) => setTestPassword(e.target.value)} required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm" placeholder="••••••••" />
-                  </div>
+              {/* API Key */}
+              <label className="flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition
+                hover:bg-gray-50
+                has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                <input
+                  type="radio"
+                  name="authType"
+                  value="apikey"
+                  checked={authType === 'apikey'}
+                  onChange={() => setAuthType('apikey')}
+                  className="w-4 h-4 accent-blue-600 mt-0.5"
+                />
+                <div className="flex-1">
+                  <p className="font-mono font-semibold text-gray-800 text-sm">API Key</p>
+                  <p className="text-xs text-gray-400 font-mono mb-3">Sent as a request header</p>
+
+                  {authType === 'apikey' && (
+                    <div className="space-y-3 mt-3" onClick={(e) => e.stopPropagation()}>
+                      <div>
+                        <label className="block text-xs font-mono font-medium text-gray-600 mb-1">Header Name</label>
+                        <input
+                          type="text"
+                          value={apiKeyHeader}
+                          onChange={(e) => setApiKeyHeader(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm"
+                          placeholder="X-API-Key"
+                        />
+                        <p className="text-xs text-gray-400 font-mono mt-1">e.g. X-API-Key · Authorization · x-access-token</p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-mono font-medium text-gray-600 mb-1">Value</label>
+                        <input
+                          type="password"
+                          value={apiKeyValue}
+                          onChange={(e) => setApiKeyValue(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm"
+                          placeholder="••••••••"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </label>
+
+              {/* Login Required */}
+              <label className="flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition
+                hover:bg-gray-50
+                has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                <input
+                  type="radio"
+                  name="authType"
+                  value="login"
+                  checked={authType === 'login'}
+                  onChange={() => setAuthType('login')}
+                  className="w-4 h-4 accent-blue-600 mt-0.5"
+                />
+                <div className="flex-1">
+                  <p className="font-mono font-semibold text-gray-800 text-sm">Login Required</p>
+                  <p className="text-xs text-gray-400 font-mono mb-3">Monitor logs in automatically before each check</p>
+
+                  {authType === 'login' && (
+                    <div className="space-y-3 mt-3" onClick={(e) => e.stopPropagation()}>
+                      <div>
+                        <label className="block text-xs font-mono font-medium text-gray-600 mb-1">Login URL</label>
+                        <input
+                          type="url"
+                          value={loginEndpoint}
+                          onChange={(e) => setLoginEndpoint(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm"
+                          placeholder="https://api.example.com/auth/login"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-mono font-medium text-gray-600 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={testEmail}
+                          onChange={(e) => setTestEmail(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm"
+                          placeholder="monitor@example.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-mono font-medium text-gray-600 mb-1">Password</label>
+                        <input
+                          type="password"
+                          value={testPassword}
+                          onChange={(e) => setTestPassword(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-mono text-sm"
+                          placeholder="••••••••"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </label>
+
             </div>
           </div>
 
@@ -543,12 +594,7 @@ const AddEndpoint= () => {
               <span className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-mono">3</span>
               Monitoring Settings
             </h2>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-mono font-medium text-gray-700 mb-2">Check Interval (seconds) *</label>
-                <input type="number" value={checkInterval} onChange={(e) => setCheckInterval(e.target.value)} required min="10"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-mono" placeholder="30" />
-              </div>
+            <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-mono font-medium text-gray-700 mb-2">Timeout (seconds) *</label>
                 <input type="number" value={timeout} onChange={(e) => setTimeout(e.target.value)} required min="1"
@@ -585,7 +631,6 @@ const AddEndpoint= () => {
               ))}
             </div>
 
-            {/* Add Endpoint Button */}
             <button
               type="button"
               onClick={addEndpoint}

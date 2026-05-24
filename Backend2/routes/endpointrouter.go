@@ -15,9 +15,8 @@ func RegisterEndpointRoutes(router *mux.Router) {
 		middleware.AuthMiddleware,
 	)
 
-	protected.HandleFunc(
-		"/add-endpoints",
-		controllers.AddEndpoints,
-	).Methods(
-		"POST")
+	protected.HandleFunc("/add-endpoints", controllers.AddEndpoints).Methods("POST")
+	protected.HandleFunc("/endpoints", controllers.GetEndpoints).Methods("GET")
+	/*protected.HandleFunc("/endpoint/{id}", controllers.DeleteEndpoint).Methods("DELETE")
+	protected.HandleFunc("/endpoint/{id}", controllers.UpdateEndpoint).Methods("PUT")*/
 }

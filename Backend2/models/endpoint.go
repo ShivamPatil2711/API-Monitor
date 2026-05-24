@@ -15,7 +15,6 @@ type Endpoint struct {
 
 	Headers map[string]string `bson:"headers" json:"headers"`
 
-
 	Body interface{} `bson:"body" json:"body"`
 
 	Validation struct {

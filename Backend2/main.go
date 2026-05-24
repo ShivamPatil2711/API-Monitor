@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"mybackend/controllers"
+	"mybackend/monitor"
 	"mybackend/routes"
 
 	"github.com/gorilla/mux"
@@ -70,6 +71,7 @@ func main() {
 	}
 
 	log.Println("Server Running on port:", PORT)
+	monitor.StartScheduler()
 	log.Fatal(server.ListenAndServe())
 }
 
