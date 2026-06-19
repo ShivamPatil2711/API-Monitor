@@ -71,14 +71,15 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	tokenString, _ := token.SignedString([]byte(JWTSecret))
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Usercookie",
-		Value:    tokenString,
-		HttpOnly: true,
-		Secure:   false, // set true in production
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   7200,
-	})
+http.SetCookie(w, &http.Cookie{
+    Name:     "Usercookie",
+    Value:    tokenString,
+    Path:     "/",
+    HttpOnly: true,
+    Secure:   true,
+    SameSite: http.SameSiteNoneMode,
+    MaxAge:   7200,
+})
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Login successful",
@@ -245,12 +246,15 @@ func CheckAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "Usercookie",
-		Value:    "",
-		MaxAge:   -1,
-		HttpOnly: true,
-	})
+http.SetCookie(w, &http.Cookie{
+    Name:     "Usercookie",
+    Value:    "",
+    Path:     "/",
+    MaxAge:   -1,
+    HttpOnly: true,
+    Secure:   true,
+    SameSite: http.SameSiteNoneMode,
+})
 	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
 }
 

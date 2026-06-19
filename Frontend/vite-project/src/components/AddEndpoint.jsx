@@ -329,7 +329,7 @@ const AddEndpoint = () => {
         })),
       };
 
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:4003'}/api/add-endpoints`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4003'}/api/add-endpoints`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

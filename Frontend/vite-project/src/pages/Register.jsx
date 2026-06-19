@@ -10,7 +10,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL || "http://localhost:4003";
+  const backendApiUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:4003";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
