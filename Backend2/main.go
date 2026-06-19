@@ -67,6 +67,7 @@ func main() {
 	routes.RegisterEndpointRoutes(router)
 
 	// Server
+	log.Println("PORT ENV =", os.Getenv("PORT"))
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
 		PORT = "4003"
