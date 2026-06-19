@@ -80,7 +80,7 @@ func main() {
 	}
 
 	log.Println("Server Running on port:", PORT)
-	monitor.StartScheduler()
+	go monitor.StartScheduler()
 	log.Fatal(server.ListenAndServe())
 }
 
