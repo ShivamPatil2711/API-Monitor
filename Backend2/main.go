@@ -67,6 +67,7 @@ func main() {
 	routes.RegisterEndpointRoutes(router)
 
 	// Server
+	log.Println("DEPLOY TEST 123")
 	log.Println("PORT ENV =", os.Getenv("PORT"))
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
