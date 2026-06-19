@@ -220,7 +220,7 @@ const EndpointList = () => {
       refreshing ? null : setLoading(true);
       setRefreshing(true);
 
-      const response = await fetch('http://localhost:4003/api/endpoints', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4003'}/api/endpoints`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

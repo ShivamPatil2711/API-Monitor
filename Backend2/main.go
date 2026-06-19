@@ -19,19 +19,29 @@ import (
 )
 
 var (
-	MongoClient *mongo.Client
-	JWTSecret   string
+	MongoClient   *mongo.Client
+	JWTSecret     string
+	AllowedOrigin string
 )
 
 func main() {
 	// Load ENV
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("No .env found")
+		log.Println("No .env found, using system environment variables")
 	}
 
-	// JWT
+	// Load Configs from ENV
 	JWTSecret = os.Getenv("JWT_SECRET")
+	AllowedOrigin = os.Getenv("ALLOWED_ORIGIN")
+	if AllowedOrigin == "" {
+		AllowedOrigin = "http://localhost:5173" // Default fallback
+	}
+
+	mongoURI := os.Getenv("MONGODB_URI")
+	if mongoURI == "" {
+		mongoURI = "mongodb://127.0.0.1:27017/api-monitor"
+	}
 
 	// Mongo Connection
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -39,14 +49,14 @@ func main() {
 
 	MongoClient, err = mongo.Connect(
 		ctx,
-		options.Client().ApplyURI("mongodb://127.0.0.1:27017/api-monitor"),
+		options.Client().ApplyURI(mongoURI),
 	)
 
 	if err != nil {
 		log.Fatal("Mongo Error:", err)
 	}
 
-	log.Println("Connected MongoDB")
+	log.Println("Connected to MongoDB")
 	controllers.InitController(MongoClient, JWTSecret)
 
 	// Router
@@ -63,8 +73,7 @@ func main() {
 	}
 
 	server := &http.Server{
-		Addr: ":" + PORT,
-		// FIX: Wrap the entire router with the CORS middleware here!
+		Addr:         ":" + PORT,
 		Handler:      CORSMiddleware(router),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -77,13 +86,12 @@ func main() {
 
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Origin", AllowedOrigin)
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Cookie")
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
 
-		// FIX: Intercept OPTIONS preflight requests and return 200 immediately.
-		// This prevents the request from reaching the mux router at all.
+		// Intercept OPTIONS preflight requests
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
