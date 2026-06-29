@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, ArrowLeft, CheckCircle, Edit2 } from 'lucide-react';
-import { toast } from "sonner";
+import { Plus, Trash2, ArrowLeft, CheckCircle, Edit2, XCircle } from 'lucide-react';
 
 // ─── Blank endpoint template ──────────────────────────────────────────────────
 const blankEndpoint = () => ({
@@ -18,8 +17,12 @@ const blankEndpoint = () => ({
   maxResponseTime: '',
 });
 
+// ─── Shared label style ───────────────────────────────────────────────────────
+const lbl = { display:'block', fontSize:12, fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.07em', color:'#6b7280', marginBottom:6 };
+
 // ─── Single Endpoint Card ─────────────────────────────────────────────────────
 const EndpointCard = ({ endpoint, index, onSave, onRemove, onEdit }) => {
+  const [cardError, setCardError] = useState('');
   const [local, setLocal] = useState({ ...endpoint });
 
   const needsBody = ['POST', 'PUT', 'PATCH'].includes(local.method);
@@ -42,38 +45,42 @@ const EndpointCard = ({ endpoint, index, onSave, onRemove, onEdit }) => {
 
   const handleSave = () => {
     if (!local.name || !local.url) {
-      toast.error('Endpoint name and URL are required');
+      setCardError('Endpoint name and URL are required');
       return;
     }
+    setCardError('');
     onSave({ ...local, saved: true });
   };
 
   // ── Saved (collapsed) view ──
   if (endpoint.saved) {
+    const methodColor = {
+      GET: '#16a34a', POST: '#2563eb', PUT: '#d97706',
+      PATCH: '#7c3aed', DELETE: '#dc2626'
+    }[endpoint.method] || '#6b7280';
     return (
-      <div className="bg-white rounded-3xl shadow border border-gray-200 p-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <CheckCircle size={20} className="text-green-500 flex-shrink-0" />
+      <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:16, padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <CheckCircle size={18} color="#16a34a" style={{ flexShrink:0 }} />
           <div>
-            <p className="font-semibold text-gray-900">{endpoint.name}</p>
-            <p className="text-xs font-mono text-gray-500">{endpoint.method} · {endpoint.url}</p>
+            <p style={{ fontWeight:600, color:'#111827', fontSize:14, margin:0 }}>{endpoint.name}</p>
+            <p style={{ fontSize:12, fontFamily:'monospace', color:'#6b7280', margin:'2px 0 0' }}>
+              <span style={{ background: methodColor + '18', color: methodColor, fontWeight:700, padding:'1px 7px', borderRadius:6, marginRight:6, fontSize:11 }}>{endpoint.method}</span>
+              {endpoint.url}
+            </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => onEdit(endpoint.id)}
-            className="px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-2xl transition"
-          >
-            <Edit2 size={16} />
+        <div style={{ display:'flex', gap:4 }}>
+          <button type="button" onClick={() => onEdit(endpoint.id)}
+            style={{ padding:'7px 10px', background:'#eff6ff', border:'none', borderRadius:8, color:'#2563eb', cursor:'pointer' }}>
+            <Edit2 size={15} />
           </button>
-          <button
-            type="button"
-            onClick={() => onRemove(endpoint.id)}
-            className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-2xl transition"
-          >
-            <Trash2 size={16} />
-          </button>
+          {onRemove && (
+            <button type="button" onClick={() => onRemove(endpoint.id)}
+              style={{ padding:'7px 10px', background:'#fef2f2', border:'none', borderRadius:8, color:'#dc2626', cursor:'pointer' }}>
+              <Trash2 size={15} />
+            </button>
+          )}
         </div>
       </div>
     );
@@ -81,21 +88,18 @@ const EndpointCard = ({ endpoint, index, onSave, onRemove, onEdit }) => {
 
   // ── Expanded (edit) view ──
   return (
-    <div className="bg-white rounded-3xl shadow-lg border-2 border-blue-200 p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-          <span className="bg-blue-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm font-mono">
+    <div style={{ background:'#fff', border:'1px solid #dbeafe', borderRadius:18, padding:'28px', boxShadow:'0 4px 16px rgba(37,99,235,0.08)' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
+        <h3 style={{ fontSize:16, fontWeight:700, color:'#111827', display:'flex', alignItems:'center', gap:10, margin:0 }}>
+          <span style={{ background:'#2563eb', color:'#fff', width:28, height:28, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontFamily:'monospace' }}>
             {index + 1}
           </span>
           Endpoint {index + 1}
         </h3>
         {onRemove && (
-          <button
-            type="button"
-            onClick={() => onRemove(endpoint.id)}
-            className="text-red-500 hover:text-red-700 transition"
-          >
-            <Trash2 size={18} />
+          <button type="button" onClick={() => onRemove(endpoint.id)}
+            style={{ padding:'6px 10px', background:'#fef2f2', border:'none', borderRadius:8, color:'#dc2626', cursor:'pointer' }}>
+            <Trash2 size={16} />
           </button>
         )}
       </div>
@@ -127,20 +131,18 @@ const EndpointCard = ({ endpoint, index, onSave, onRemove, onEdit }) => {
 
         {/* Method */}
         <div>
-          <label className="block text-sm font-mono font-medium text-gray-700 mb-2">HTTP Method *</label>
-          <div className="grid grid-cols-5 gap-3">
-            {['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setLocal({ ...local, method: m })}
-                className={`px-4 py-2 rounded-2xl font-mono font-medium transition ${
-                  local.method === m ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {m}
-              </button>
-            ))}
+          <label style={lbl}>HTTP Method *</label>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            {['GET','POST','PUT','PATCH','DELETE'].map((m) => {
+              const colors = { GET:'#16a34a', POST:'#2563eb', PUT:'#d97706', PATCH:'#7c3aed', DELETE:'#dc2626' };
+              const active = local.method === m;
+              return (
+                <button key={m} type="button" onClick={() => setLocal({ ...local, method: m })}
+                  style={{ padding:'7px 16px', borderRadius:8, fontFamily:'monospace', fontWeight:700, fontSize:13, border: active ? 'none' : '1px solid #e5e7eb', background: active ? colors[m] : '#f9fafb', color: active ? '#fff' : '#6b7280', cursor:'pointer' }}>
+                  {m}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -222,11 +224,16 @@ const EndpointCard = ({ endpoint, index, onSave, onRemove, onEdit }) => {
       </div>
 
       {/* Save Endpoint */}
-      <div className="mt-6">
+      {cardError && (
+        <div style={{ display:'flex', alignItems:'center', gap:8, background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', marginTop:16, fontSize:13, color:'#dc2626' }}>
+          <XCircle size={14} color="#dc2626" style={{ flexShrink:0 }} /> {cardError}
+        </div>
+      )}
+      <div className="mt-4">
         <button
           type="button"
           onClick={handleSave}
-          className="w-full bg-green-600 text-white py-3 rounded-2xl hover:bg-green-700 transition font-medium shadow"
+          style={{ width:'100%', padding:'12px', background:'#16a34a', color:'#fff', fontWeight:600, fontSize:14, border:'none', borderRadius:12, cursor:'pointer' }}
         >
           Save Endpoint
         </button>
@@ -244,6 +251,7 @@ const AddEndpoint = () => {
 
   // 1. Monitor Info
   const [name, setName] = useState('');
+  const [alertEmail, setAlertEmail] = useState('');
 
   // 2. Authentication — simplified to 3 options
   const [authType, setAuthType] = useState('none');
@@ -261,15 +269,18 @@ const AddEndpoint = () => {
   const [endpoints, setEndpoints] = useState([blankEndpoint()]);
 
   // ── Endpoint management ──
+  const [formError, setFormError] = useState('');
+
   const saveEndpoint = (updated) => {
     setEndpoints(endpoints.map((ep) => (ep.id === updated.id ? updated : ep)));
   };
 
   const removeEndpoint = (id) => {
     if (endpoints.length === 1) {
-      toast.error('At least one endpoint is required');
+      setFormError('At least one endpoint is required');
       return;
     }
+    setFormError('');
     setEndpoints(endpoints.filter((ep) => ep.id !== id));
   };
 
@@ -280,18 +291,20 @@ const AddEndpoint = () => {
   const addEndpoint = () => {
     const unsaved = endpoints.filter((ep) => !ep.saved);
     if (unsaved.length > 0) {
-      toast.error('Please save the current endpoint before adding another');
+      setFormError('Please save the current endpoint before adding another');
       return;
     }
+    setFormError('');
     setEndpoints([...endpoints, blankEndpoint()]);
   };
 
   // ── Review step ──
   const handleReview = () => {
-    if (!name) { toast.error('Monitor name is required'); return; }
+    if (!name) { setFormError('Monitor name is required'); return; }
     const unsaved = endpoints.filter((ep) => !ep.saved);
-    if (unsaved.length > 0) { toast.error('Please save all endpoints before reviewing'); return; }
-    if (endpoints.length === 0) { toast.error('Add at least one endpoint'); return; }
+    if (unsaved.length > 0) { setFormError('Please save all endpoints before reviewing'); return; }
+    if (endpoints.length === 0) { setFormError('Add at least one endpoint'); return; }
+    setFormError('');
     setStep('review');
   };
 
@@ -300,7 +313,6 @@ const AddEndpoint = () => {
     setError('');
     setLoading(true);
     try {
-      // Build auth config based on simplified 3-option model
       let authConfig = { type: authType };
       if (authType === 'apikey') {
         authConfig.header = apiKeyHeader;
@@ -313,6 +325,7 @@ const AddEndpoint = () => {
 
       const monitorData = {
         name,
+        alertEmail: alertEmail.trim() || undefined,
         auth: authConfig,
         monitoring: { timeout: parseInt(timeout), retryCount: parseInt(retryCount) },
         endpoints: endpoints.map((ep) => ({
@@ -329,19 +342,22 @@ const AddEndpoint = () => {
         })),
       };
 
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4003'}/api/add-endpoints`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4003'}/api/add-endpoints`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(monitorData),
       });
-      const data = await response.json();
-      console.log('Response data:', data);
-      toast.success('Monitor created successfully!');
-      navigate('/');
-    } catch (err) {
-      setError(err.message || 'Failed to create monitor');
-      toast.error('Failed to create monitor');
+
+      if (res.ok) {
+        navigate('/endpoints');
+      } else {
+        // backend uses http.Error (plain text) on failure
+        const text = await res.text();
+        setError(text.trim() || 'Failed to create monitor');
+      }
+    } catch {
+      setError('Cannot connect to server. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -353,64 +369,62 @@ const AddEndpoint = () => {
   if (step === 'review') {
     const authLabels = { none: 'None', apikey: 'API Key', login: 'Login Required' };
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-8">
-            <button onClick={() => setStep('form')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition">
-              <ArrowLeft size={20} />
-              <span className="font-mono text-sm">Back to Edit</span>
+      <div style={{ minHeight:'100vh', background:'#f9fafb', padding:'32px 16px', fontFamily:"'Inter',sans-serif" }}>
+        <div style={{ maxWidth:720, margin:'0 auto' }}>
+          <div style={{ marginBottom:28 }}>
+            <button onClick={() => setStep('form')} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'#6b7280', fontSize:13, cursor:'pointer', marginBottom:16, padding:0 }}>
+              <ArrowLeft size={16} /> Back to Edit
             </button>
-            <h1 className="text-4xl font-bold text-gray-900">Review Monitor</h1>
-            <p className="text-gray-600 mt-2 font-mono text-sm">Double-check everything before creating</p>
+            <h1 style={{ fontSize:26, fontWeight:700, color:'#111827', margin:'0 0 4px' }}>Review Monitor</h1>
+            <p style={{ fontSize:13, color:'#6b7280', fontFamily:'monospace', margin:0 }}>Double-check everything before creating</p>
           </div>
 
           {error && (
-            <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-3xl mb-6">{error}</div>
+            <div style={{ display:'flex', alignItems:'center', gap:8, background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'12px 16px', marginBottom:20, fontSize:13, color:'#dc2626' }}>
+              <XCircle size={14} color="#dc2626" style={{ flexShrink:0 }} /> {error}
+            </div>
           )}
 
-          <div className="space-y-6">
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             {/* Monitor Summary */}
-            <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Monitor</h2>
-              <p className="text-lg font-semibold text-gray-800">{name}</p>
-              <p className="text-sm font-mono text-gray-500 mt-1">
-                Auth: {authLabels[authType]} &nbsp;·&nbsp;
-                Timeout: {timeout}s &nbsp;·&nbsp;
-                Retries: {retryCount}
+            <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:16, padding:'24px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+              <p style={{ fontSize:11, fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.07em', color:'#6b7280', margin:'0 0 8px' }}>Monitor</p>
+              <p style={{ fontSize:18, fontWeight:700, color:'#111827', margin:'0 0 6px' }}>{name}</p>
+              <p style={{ fontSize:12, fontFamily:'monospace', color:'#9ca3af', margin:0 }}>
+                Auth: {authLabels[authType]} &nbsp;·&nbsp; Timeout: {timeout}s &nbsp;·&nbsp; Retries: {retryCount}
               </p>
             </div>
 
             {/* Endpoints Summary */}
-            <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">{endpoints.length} Endpoint{endpoints.length !== 1 ? 's' : ''}</h2>
-              <div className="space-y-3">
-                {endpoints.map((ep) => (
-                  <div key={ep.id} className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-200">
-                    <CheckCircle size={18} className="text-green-500 flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-gray-900">{ep.name}</p>
-                      <p className="text-xs font-mono text-gray-500">{ep.method} · {ep.url} · expect {ep.expectedStatus}</p>
+            <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:16, padding:'24px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+              <p style={{ fontSize:11, fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.07em', color:'#6b7280', margin:'0 0 14px' }}>{endpoints.length} Endpoint{endpoints.length !== 1 ? 's' : ''}</p>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {endpoints.map((ep) => {
+                  const mc = { GET:'#16a34a', POST:'#2563eb', PUT:'#d97706', PATCH:'#7c3aed', DELETE:'#dc2626' }[ep.method] || '#6b7280';
+                  return (
+                    <div key={ep.id} style={{ display:'flex', alignItems:'center', gap:12, background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:12, padding:'12px 16px' }}>
+                      <CheckCircle size={16} color="#16a34a" style={{ flexShrink:0 }} />
+                      <div>
+                        <p style={{ fontWeight:600, color:'#111827', fontSize:14, margin:0 }}>{ep.name}</p>
+                        <p style={{ fontSize:12, fontFamily:'monospace', color:'#6b7280', margin:'2px 0 0' }}>
+                          <span style={{ background: mc+'18', color:mc, fontWeight:700, padding:'1px 7px', borderRadius:6, marginRight:6, fontSize:11 }}>{ep.method}</span>
+                          {ep.url} · expect {ep.expectedStatus}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex-1 bg-blue-600 text-white py-4 rounded-2xl hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg shadow-lg"
-              >
-                {loading ? 'Creating Monitor...' : 'Create Monitor'}
+            <div style={{ display:'flex', gap:12 }}>
+              <button type="button" onClick={handleSubmit} disabled={loading}
+                style={{ flex:1, padding:'13px', background: loading ? '#93c5fd' : '#2563eb', color:'#fff', fontWeight:600, fontSize:15, border:'none', borderRadius:12, cursor: loading ? 'not-allowed' : 'pointer' }}>
+                {loading ? 'Creating…' : 'Create Monitor'}
               </button>
-              <button
-                type="button"
-                onClick={() => setStep('form')}
-                className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition font-medium"
-              >
+              <button type="button" onClick={() => setStep('form')}
+                style={{ padding:'13px 24px', border:'1px solid #d1d5db', background:'#fff', color:'#374151', fontWeight:500, fontSize:15, borderRadius:12, cursor:'pointer' }}>
                 Edit
               </button>
             </div>
@@ -423,33 +437,36 @@ const AddEndpoint = () => {
   // ─────────────────────────────────────────────────────────────────────────────
   // MAIN FORM
   // ─────────────────────────────────────────────────────────────────────────────
+  // shared label style used in EndpointCard too
+  const lbl = { display:'block', fontSize:12, fontFamily:'monospace', textTransform:'uppercase', letterSpacing:'0.07em', color:'#6b7280', marginBottom:6 };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div style={{ minHeight:'100vh', background:'#f9fafb', padding:'32px 16px', fontFamily:"'Inter',sans-serif" }}>
+      <div style={{ maxWidth:720, margin:'0 auto' }}>
         {/* Header */}
-        <div className="mb-8">
-          <button onClick={() => navigate('/endpoints')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition">
-            <ArrowLeft size={20} />
-            <span className="font-mono text-sm">Back to Endpoints</span>
+        <div style={{ marginBottom:28 }}>
+          <button onClick={() => navigate('/endpoints')} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'none', color:'#6b7280', fontSize:13, cursor:'pointer', marginBottom:16, padding:0 }}>
+            <ArrowLeft size={16} /> Back to Endpoints
           </button>
-          <h1 className="text-4xl font-bold text-gray-900">Add New Monitor</h1>
-          <p className="text-gray-600 mt-2 font-mono text-sm">Configure authentication, settings, then add your endpoints</p>
+          <h1 style={{ fontSize:26, fontWeight:700, color:'#111827', margin:'0 0 4px' }}>Add New Monitor</h1>
+          <p style={{ fontSize:13, color:'#6b7280', fontFamily:'monospace', margin:0 }}>Configure auth, settings, then add endpoints</p>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border-2 border-red-200 text-red-700 px-6 py-4 rounded-3xl mb-6">{error}</div>
+        {(error || formError) && (
+          <div style={{ display:'flex', alignItems:'center', gap:8, background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'12px 16px', marginBottom:20, fontSize:13, color:'#dc2626' }}>
+            <XCircle size={14} color="#dc2626" style={{ flexShrink:0 }} /> {error || formError}
+          </div>
         )}
 
-        <div className="space-y-6">
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
 
           {/* 1. Monitor Name */}
-          <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <span className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm font-mono">1</span>
+          <div style={{ background:'#fff', border:'1px solid #e5e7eb', borderRadius:16, padding:'24px', boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ fontSize:15, fontWeight:700, color:'#111827', display:'flex', alignItems:'center', gap:10, margin:'0 0 18px' }}>
+              <span style={{ background:'#2563eb', color:'#fff', width:26, height:26, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontFamily:'monospace' }}>1</span>
               Monitor Information
             </h2>
             <div>
-              <label className="block text-sm font-mono font-medium text-gray-700 mb-2">Monitor Name *</label>
+              <label style={lbl}>Monitor Name *</label>
               <input
                 type="text"
                 value={name}
@@ -457,6 +474,16 @@ const AddEndpoint = () => {
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
                 placeholder="Production APIs"
+              />
+            </div>
+            <div style={{ marginTop:16 }}>
+              <label style={lbl}>Alert Email <span style={{ color:'#9ca3af', fontWeight:400 }}>(optional)</span></label>
+              <input
+                type="email"
+                value={alertEmail}
+                onChange={(e) => setAlertEmail(e.target.value)}
+                style={{ width:'100%', padding:'11px 14px', fontSize:14, border:'1px solid #d1d5db', borderRadius:10, outline:'none', boxSizing:'border-box', color:'#111827', background:'#fff' }}
+                placeholder="you@example.com — notified when endpoint goes DOWN"
               />
             </div>
           </div>
@@ -642,18 +669,18 @@ const AddEndpoint = () => {
           </div>
 
           {/* Review Button */}
-          <div className="flex gap-4 pb-8">
+          <div style={{ display:'flex', gap:12, paddingBottom:32 }}>
             <button
               type="button"
               onClick={handleReview}
-              className="flex-1 bg-blue-600 text-white py-4 rounded-2xl hover:bg-blue-700 transition font-medium text-lg shadow-lg"
+              style={{ flex:1, padding:'13px', background:'#2563eb', color:'#fff', fontWeight:600, fontSize:15, border:'none', borderRadius:12, cursor:'pointer' }}
             >
               Review & Create →
             </button>
             <button
               type="button"
               onClick={() => navigate('/endpoints')}
-              className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-2xl hover:bg-gray-50 transition font-medium"
+              style={{ padding:'13px 24px', border:'1px solid #d1d5db', background:'#fff', color:'#374151', fontWeight:500, fontSize:15, borderRadius:12, cursor:'pointer' }}
             >
               Cancel
             </button>

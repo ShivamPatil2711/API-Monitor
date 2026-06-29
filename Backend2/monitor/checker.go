@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -153,12 +152,16 @@ func CheckEndpoint(endpoint models.Endpoint, auth models.Auth, timeout int, retr
 	if err != nil {
 		return CheckResult{Success: false, Error: err.Error()}
 	}
-	log.Printf("DEBUG: Endpoint %s - LoginEndpoint parsed as: '%s'\n", endpoint.Name, auth.LoginEndpoint)
 	defer resp.Body.Close()
+
+	expected := endpoint.Validation.ExpectedStatus
+	if expected == 0 {
+		expected = 200 // default fallback
+	}
 
 	return CheckResult{
 		StatusCode: resp.StatusCode,
 		Latency:    time.Since(start).Milliseconds(),
-		Success:    resp.StatusCode >= 200 && resp.StatusCode < 300,
+		Success:    resp.StatusCode == expected,
 	}
 }

@@ -7,15 +7,19 @@ import (
 )
 
 type WorkerResult struct {
-	Endpoint models.Endpoint
-	Result   CheckResult
+	Endpoint    models.Endpoint
+	Result      CheckResult
+	AlertEmail  string
+	MonitorName string
 }
 
 type CheckJob struct {
-	Endpoint   models.Endpoint
-	Auth       models.Auth
-	Timeout    int
-	RetryCount int
+	Endpoint    models.Endpoint
+	Auth        models.Auth
+	Timeout     int
+	RetryCount  int
+	AlertEmail  string
+	MonitorName string
 }
 
 func StartWorkers(workerCount int, jobs <-chan CheckJob, results chan<- WorkerResult) {
@@ -39,8 +43,10 @@ func StartWorkers(workerCount int, jobs <-chan CheckJob, results chan<- WorkerRe
 
 				// Send the result to the channel
 				results <- WorkerResult{
-					Endpoint: job.Endpoint,
-					Result:   result,
+					Endpoint:    job.Endpoint,
+					Result:      result,
+					AlertEmail:  job.AlertEmail,
+					MonitorName: job.MonitorName,
 				}
 			}
 		}()

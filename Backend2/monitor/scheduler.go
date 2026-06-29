@@ -53,11 +53,15 @@ func RunCycle() {
 	authMap := make(map[primitive.ObjectID]models.Auth)
 	timeoutMap := make(map[primitive.ObjectID]int)
 	retryMap := make(map[primitive.ObjectID]int)
+	alertEmailMap := make(map[primitive.ObjectID]string)
+	monitorNameMap := make(map[primitive.ObjectID]string)
 
 	for _, monitor := range monitors {
 		authMap[monitor.ID] = monitor.Auth
 		timeoutMap[monitor.ID] = monitor.Monitoring.Timeout
 		retryMap[monitor.ID] = monitor.Monitoring.RetryCount
+		alertEmailMap[monitor.ID] = monitor.AlertEmail
+		monitorNameMap[monitor.ID] = monitor.Name
 	}
 
 	// =========================
@@ -98,10 +102,12 @@ func RunCycle() {
 	// =========================
 	for _, endpoint := range endpoints {
 		jobs <- CheckJob{
-			Endpoint:   endpoint,
-			Auth:       authMap[endpoint.Monitor],
-			Timeout:    timeoutMap[endpoint.Monitor],
-			RetryCount: retryMap[endpoint.Monitor],
+			Endpoint:    endpoint,
+			Auth:        authMap[endpoint.Monitor],
+			Timeout:     timeoutMap[endpoint.Monitor],
+			RetryCount:  retryMap[endpoint.Monitor],
+			AlertEmail:  alertEmailMap[endpoint.Monitor],
+			MonitorName: monitorNameMap[endpoint.Monitor],
 		}
 	}
 	close(jobs)

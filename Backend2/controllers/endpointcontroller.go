@@ -18,6 +18,7 @@ import (
 // ✅ THE FIX: Use models.Auth and models.Monitoring directly!
 type MonitorRequest struct {
 	Name       string            `json:"name"`
+	AlertEmail string            `json:"alertEmail"`
 	Auth       models.Auth       `json:"auth"`
 	Monitoring models.Monitoring `json:"monitoring"`
 	Endpoints  []models.Endpoint `json:"endpoints"`
@@ -71,8 +72,9 @@ func AddEndpoints(w http.ResponseWriter, r *http.Request) {
 		ID:         primitive.NewObjectID(),
 		Name:       req.Name,
 		User:       userID,
-		Auth:       req.Auth,       // ✅ This works now!
-		Monitoring: req.Monitoring, // ✅ This works now!
+		AlertEmail: req.AlertEmail,
+		Auth:       req.Auth,
+		Monitoring: req.Monitoring,
 	}
 
 	_, err = monitorCollection.InsertOne(context.TODO(), monitor)

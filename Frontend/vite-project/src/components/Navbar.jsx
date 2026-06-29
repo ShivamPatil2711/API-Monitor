@@ -14,9 +14,7 @@ const Navbar = () => {
   const isActive = (path) => location.pathname === path;
 
   const navLinks = [
-    { name: "Home", path: "/" },
-    { name: "Endpoints", path: "/endpoints" },
-    { name: "Analytics", path: "/analytics" },
+    ...(isLoggedIn ? [{ name: "Endpoints", path: "/endpoints" }] : []),
   ];
 
   return (
@@ -29,7 +27,7 @@ const Navbar = () => {
               <Activity className="w-5 h-5 text-white" />
             </div>
             <span className="font-semibold text-2xl tracking-tight text-gray-900">
-              gapi<span className="text-blue-600">.</span>monitor
+              Watch<span className="text-blue-600">API</span>
             </span>
           </Link>
 
@@ -98,14 +96,6 @@ const Navbar = () => {
                         <p className="font-medium text-gray-900">{user.name}</p>
                         <p className="text-sm text-gray-500 truncate">{user.email}</p>
                       </div>
-
-                      <Link
-                        to="/profile"
-                        className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setShowProfileDropdown(false)}
-                      >
-                        Profile Settings
-                      </Link>
 
                       <button
                         onClick={() => {
@@ -182,14 +172,6 @@ const Navbar = () => {
                   <Plus className="w-5 h-5" />
                   Add New Endpoint
                 </button>
-
-                <Link
-                  to="/profile"
-                  className="px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Profile Settings
-                </Link>
 
                 <button
                   onClick={() => {

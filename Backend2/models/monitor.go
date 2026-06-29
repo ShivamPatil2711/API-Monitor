@@ -33,6 +33,8 @@ type Monitor struct {
 
 	User primitive.ObjectID `bson:"user" json:"user"`
 
+	AlertEmail string `bson:"alertEmail,omitempty" json:"alertEmail,omitempty"`
+
 	Auth Auth `bson:"auth" json:"auth"`
 
 	Monitoring Monitoring `bson:"monitoring" json:"monitoring"`
