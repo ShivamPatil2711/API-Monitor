@@ -5,7 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const { isLoggedIn, setIsLoggedIn, setUser, user } = useContext(AuthContext);
+  const { isLoggedIn, user, logout } = useContext(AuthContext);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -98,11 +98,10 @@ const Navbar = () => {
                       </div>
 
                       <button
-                        onClick={() => {
-                          // Add your logout logic here
-                          setIsLoggedIn(false);
-                          setUser(null);
+                        onClick={async () => {
+                          await logout();
                           setShowProfileDropdown(false);
+                          navigate('/login');
                         }}
                         className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"
                       >
@@ -174,9 +173,10 @@ const Navbar = () => {
                 </button>
 
                 <button
-                  onClick={() => {
-                    // Add logout logic here
+                  onClick={async () => {
+                    await logout();
                     setIsOpen(false);
+                    navigate('/login');
                   }}
                   className="px-4 py-3 text-red-600 hover:bg-red-50 rounded-2xl text-left"
                 >

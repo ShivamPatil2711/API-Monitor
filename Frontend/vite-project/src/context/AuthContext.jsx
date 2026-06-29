@@ -33,8 +33,22 @@ const backendApiUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4003
     checkAuth();
   }, []);
 
- return (
-    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, user, setUser, isLoading }}>
+  const logout = async () => {
+    try {
+      await fetch(`${backendApiUrl}/api/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsLoggedIn(false);
+      setUser(null);
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn, user, setUser, isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );
