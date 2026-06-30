@@ -226,8 +226,17 @@ const EndpointList = () => {
         credentials: 'include',
       });
 
+      if (!response.ok) {
+        if (response.status === 401) {
+          navigate('/login');
+          return;
+        }
+        // Go's http.Error returns plain text, not JSON
+        const text = await response.text();
+        throw new Error(text.trim() || 'Failed to fetch endpoints');
+      }
+
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to fetch endpoints');
 
       // Map directly from real DB fields — no mocking
       const mapped = (data.data || []).map(ep => ({
